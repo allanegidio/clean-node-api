@@ -1,10 +1,36 @@
-import { MissingParamError } from '../errors/missingParamError'
+import { InvalidParamError } from '../errors/invalid-param-error'
+import { MissingParamError } from '../errors/missing-param-error'
+import { EmailValidator } from '../protocols/email-validator'
 import { SignUpController } from './signup'
+
+interface SignUpTypes {
+  controller: SignUpController
+  emailValidatorStub: EmailValidator
+}
+
+const signupController = (): SignUpTypes => {
+  /**
+   * Stubs are used to force a function return a forced condition
+   */
+  class EmailValidatorStub implements EmailValidator {
+    isValid (email: string): boolean {
+      return true
+    }
+  }
+
+  const emailValidatorStub = new EmailValidatorStub()
+  const controller = new SignUpController(emailValidatorStub)
+
+  return {
+    controller,
+    emailValidatorStub
+  }
+}
 
 describe('Singup Controller', () => {
   test('Should return 400 if no name is provided', () => {
     // Arrange
-    const signupController = new SignUpController()
+    const { controller } = signupController()
     const httpRequest = {
       body: {
         email: 'any_email@mail.com',
@@ -14,7 +40,7 @@ describe('Singup Controller', () => {
     }
 
     // Action
-    const httpResponse = signupController.handle(httpRequest)
+    const httpResponse = controller.handle(httpRequest)
 
     // Assert
     expect(httpResponse.statusCode).toBe(400)
@@ -23,7 +49,7 @@ describe('Singup Controller', () => {
 
   test('Should return 400 if no email is provided', () => {
     // Arrange
-    const signupController = new SignUpController()
+    const { controller } = signupController()
     const httpRequest = {
       body: {
         name: 'any_name',
@@ -33,7 +59,7 @@ describe('Singup Controller', () => {
     }
 
     // Action
-    const httpResponse = signupController.handle(httpRequest)
+    const httpResponse = controller.handle(httpRequest)
 
     // Assert
     expect(httpResponse.statusCode).toBe(400)
@@ -42,7 +68,7 @@ describe('Singup Controller', () => {
 
   test('Should return 400 if no password is provided', () => {
     // Arrange
-    const signupController = new SignUpController()
+    const { controller } = signupController()
     const httpRequest = {
       body: {
         name: 'any_name',
@@ -52,7 +78,7 @@ describe('Singup Controller', () => {
     }
 
     // Action
-    const httpResponse = signupController.handle(httpRequest)
+    const httpResponse = controller.handle(httpRequest)
 
     // Assert
     expect(httpResponse.statusCode).toBe(400)
@@ -61,7 +87,7 @@ describe('Singup Controller', () => {
 
   test('Should return 400 if no password confirmation is provided', () => {
     // Arrange
-    const signupController = new SignUpController()
+    const { controller } = signupController()
     const httpRequest = {
       body: {
         name: 'any_name',
@@ -71,10 +97,32 @@ describe('Singup Controller', () => {
     }
 
     // Action
-    const httpResponse = signupController.handle(httpRequest)
+    const httpResponse = controller.handle(httpRequest)
 
     // Assert
     expect(httpResponse.statusCode).toBe(400)
     expect(httpResponse.body).toEqual(new MissingParamError('passwordConfirmation'))
+  })
+
+  test('Should return 400 if an invalid email is provided', () => {
+    // Arrange
+    const { controller, emailValidatorStub } = signupController()
+    jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
+
+    const httpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'invalid_email@mail.com',
+        password: 'any_password',
+        passwordConfirmation: 'any_password'
+      }
+    }
+
+    // Action
+    const httpResponse = controller.handle(httpRequest)
+
+    // Assert
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new InvalidParamError('email'))
   })
 })

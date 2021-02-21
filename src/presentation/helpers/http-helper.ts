@@ -14,3 +14,9 @@ export const serverError = (): HttpResponse => {
     body: new ServerError()
   }
 }
+
+// This is a syntact sugar to avoid return keyword like above
+export const ok = (data: any): HttpResponse => ({
+  statusCode: 200,
+  body: data
+})

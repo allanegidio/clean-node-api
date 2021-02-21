@@ -7,7 +7,20 @@ interface SignUpTypes {
   emailValidatorStub: EmailValidator
 }
 
-const signupController = (): SignUpTypes => {
+const emailValidatorWithError = (): EmailValidator => {
+  /**
+   * Stubs are used to force a function return a forced condition
+   */
+  class EmailValidatorStub implements EmailValidator {
+    isValid (email: string): boolean {
+      throw new Error()
+    }
+  }
+
+  return new EmailValidatorStub()
+}
+
+const emailValidator = (): EmailValidator => {
   /**
    * Stubs are used to force a function return a forced condition
    */
@@ -17,7 +30,11 @@ const signupController = (): SignUpTypes => {
     }
   }
 
-  const emailValidatorStub = new EmailValidatorStub()
+  return new EmailValidatorStub()
+}
+
+const signupController = (): SignUpTypes => {
+  const emailValidatorStub = emailValidator()
   const controller = new SignUpController(emailValidatorStub)
 
   return {
@@ -148,17 +165,7 @@ describe('Singup Controller', () => {
 
   test('Should return 500 if EmailValidator throws', () => {
     // Arrange
-
-    /**
-     * Stubs are used to force a function return a forced condition
-     */
-    class EmailValidatorStub implements EmailValidator {
-      isValid (email: string): boolean {
-        throw new Error()
-      }
-    }
-
-    const emailValidatorStub = new EmailValidatorStub()
+    const emailValidatorStub = emailValidatorWithError()
     const controller = new SignUpController(emailValidatorStub)
 
     const httpRequest = {

@@ -4,7 +4,7 @@
   "description": "Treinamento para criar uma API com TDD, Clean Architecture e SOLID.",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --watch",
     "test:staged": "jest"
   },
   "repository": {

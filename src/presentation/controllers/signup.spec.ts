@@ -7,19 +7,6 @@ interface SignUpTypes {
   emailValidatorStub: EmailValidator
 }
 
-const emailValidatorWithError = (): EmailValidator => {
-  /**
-   * Stubs are used to force a function return a forced condition
-   */
-  class EmailValidatorStub implements EmailValidator {
-    isValid (email: string): boolean {
-      throw new Error()
-    }
-  }
-
-  return new EmailValidatorStub()
-}
-
 const emailValidator = (): EmailValidator => {
   /**
    * Stubs are used to force a function return a forced condition
@@ -165,8 +152,8 @@ describe('Singup Controller', () => {
 
   test('Should return 500 if EmailValidator throws', () => {
     // Arrange
-    const emailValidatorStub = emailValidatorWithError()
-    const controller = new SignUpController(emailValidatorStub)
+    const { controller, emailValidatorStub } = signupController()
+    jest.spyOn(emailValidatorStub, 'isValid').mockImplementation(() => { throw new Error() })
 
     const httpRequest = {
       body: {

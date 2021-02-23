@@ -6,14 +6,18 @@ interface DbAddAccountTypes {
   encrypterStub: Encrypter
 }
 
-const dbAddAccountFactory = (): DbAddAccountTypes => {
+const encrypterStubFactory = (): Encrypter => {
   class EncrypterStub implements Encrypter {
     async encrypt (value: string): Promise<string> {
       return await new Promise(resolve => resolve('hashed_password'))
     }
   }
 
-  const encrypterStub = new EncrypterStub()
+  return new EncrypterStub()
+}
+
+const dbAddAccountFactory = (): DbAddAccountTypes => {
+  const encrypterStub = encrypterStubFactory()
   const dbAddAccount = new DbAddAccount(encrypterStub)
 
   return {

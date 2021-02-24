@@ -1,9 +1,10 @@
-import { Encrypter } from '../add-acount/db-add-account-protocols'
+import { Encrypter, AddAccountModel, AccountModel, AddAccountRepository } from '../add-acount/db-add-account-protocols'
 import { DbAddAccount } from './db-add-acount'
 
 interface DbAddAccountTypes {
   dbAddAccount: DbAddAccount
   encrypterStub: Encrypter
+  addAccountRepositoryStub: AddAccountRepository
 }
 
 const encrypterStubFactory = (): Encrypter => {
@@ -16,12 +17,31 @@ const encrypterStubFactory = (): Encrypter => {
   return new EncrypterStub()
 }
 
+const addAccountRepositoryFactory = (): AddAccountRepository => {
+  class AddAccountRepositoryStub implements AddAccountRepository {
+    async add (accountData: AddAccountModel): Promise<AccountModel> {
+      const fakeAccount = {
+        id: 'valid_Id',
+        name: 'valid_name',
+        email: 'valid_email@mail.com',
+        password: 'hashed_password'
+      }
+
+      return await new Promise(resolve => resolve(fakeAccount))
+    }
+  }
+
+  return new AddAccountRepositoryStub()
+}
+
 const dbAddAccountFactory = (): DbAddAccountTypes => {
   const encrypterStub = encrypterStubFactory()
-  const dbAddAccount = new DbAddAccount(encrypterStub)
+  const addAccountRepositoryStub = addAccountRepositoryFactory()
+  const dbAddAccount = new DbAddAccount(encrypterStub, addAccountRepositoryStub)
 
   return {
     encrypterStub,
+    addAccountRepositoryStub,
     dbAddAccount
   }
 }
@@ -61,5 +81,28 @@ describe('DbAddAcount UseCase', () => {
 
     // Asserts
     await expect(promise).rejects.toThrow()
+  })
+
+  test('Should call AddAcountRepository with correct data', async () => {
+    // Arrange
+
+    const { dbAddAccount, addAccountRepositoryStub } = dbAddAccountFactory()
+    const addSpy = jest.spyOn(addAccountRepositoryStub, 'add')
+
+    const accountData = {
+      name: 'valid_name',
+      email: 'valid_email@mail.com',
+      password: 'valid_password'
+    }
+
+    // Act
+    await dbAddAccount.add(accountData)
+
+    // Asserts
+    expect(addSpy).toHaveBeenCalledWith({
+      name: 'valid_name',
+      email: 'valid_email@mail.com',
+      password: 'hashed_password'
+    })
   })
 })

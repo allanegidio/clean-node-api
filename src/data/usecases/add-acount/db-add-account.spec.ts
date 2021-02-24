@@ -1,5 +1,4 @@
-import { rejects } from 'assert'
-import { Encrypter } from '../../protocols/encrypter'
+import { Encrypter } from '../add-acount/db-add-account-protocols'
 import { DbAddAccount } from './db-add-acount'
 
 interface DbAddAccountTypes {

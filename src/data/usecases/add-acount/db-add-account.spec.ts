@@ -17,7 +17,7 @@ const encrypterStubFactory = (): Encrypter => {
   return new EncrypterStub()
 }
 
-const addAccountRepositoryFactory = (): AddAccountRepository => {
+const addAccountRepositoryStubFactory = (): AddAccountRepository => {
   class AddAccountRepositoryStub implements AddAccountRepository {
     async add (accountData: AddAccountModel): Promise<AccountModel> {
       const fakeAccount = {
@@ -36,7 +36,7 @@ const addAccountRepositoryFactory = (): AddAccountRepository => {
 
 const dbAddAccountFactory = (): DbAddAccountTypes => {
   const encrypterStub = encrypterStubFactory()
-  const addAccountRepositoryStub = addAccountRepositoryFactory()
+  const addAccountRepositoryStub = addAccountRepositoryStubFactory()
   const dbAddAccount = new DbAddAccount(encrypterStub, addAccountRepositoryStub)
 
   return {

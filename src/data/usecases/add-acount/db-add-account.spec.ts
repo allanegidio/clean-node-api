@@ -123,4 +123,25 @@ describe('DbAddAcount UseCase', () => {
     // Asserts
     await expect(promise).rejects.toThrow()
   })
+
+  test('Should return ad account on success', async () => {
+    // Arrange
+    const { dbAddAccount } = dbAddAccountFactory()
+    const accountData = {
+      name: 'valid_name',
+      email: 'valid_email@mail.com',
+      password: 'valid_password'
+    }
+
+    // Act
+    const account = await dbAddAccount.add(accountData)
+
+    // Asserts
+    expect(account).toEqual({
+      id: 'valid_Id',
+      name: 'valid_name',
+      email: 'valid_email@mail.com',
+      password: 'hashed_password'
+    })
+  })
 })

@@ -11,9 +11,13 @@ describe('Account MongoDb Repository', () => {
     await MongoHelper.disconnect()
   })
 
+  const accountMongoRepositoryFactory = (): AccountMongoRepository => {
+    return new AccountMongoRepository()
+  }
+
   test('Should return an account on success', async () => {
     // Arrange
-    const accountMongoRepository = new AccountMongoRepository()
+    const accountMongoRepository = accountMongoRepositoryFactory()
 
     // Act
     const account = await accountMongoRepository.add({

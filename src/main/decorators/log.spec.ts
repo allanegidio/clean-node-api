@@ -51,4 +51,28 @@ describe('LogController Decorator', () => {
 
     expect(handleSpy).toHaveBeenCalledWith(httpRequest)
   })
+
+  test('Should return the same result of the controller handle method', async () => {
+    const { logControllerDecorator } = logControllerDecoratorFactory()
+    const httpRequest = {
+      body: {
+        name: 'test_log',
+        email: 'test_log@mail.com',
+        password: '123',
+        passwordConfirmation: '123'
+      }
+    }
+
+    const httpResponse = await logControllerDecorator.handle(httpRequest)
+
+    expect(httpResponse).toEqual({
+      statusCode: 200,
+      body: {
+        name: 'test_log',
+        email: 'test_log@mail.com',
+        password: '123',
+        passwordConfirmation: '123'
+      }
+    })
+  })
 })

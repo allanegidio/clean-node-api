@@ -209,7 +209,7 @@ describe('Singup Controller', () => {
 
     // Assert
     expect(httpResponse.statusCode).toBe(500)
-    expect(httpResponse.body).toEqual(new ServerError())
+    expect(httpResponse.body).toEqual(new ServerError(new Error().stack as string))
   })
 
   test('Should call AddAcount with correct values', async () => {
@@ -258,7 +258,7 @@ describe('Singup Controller', () => {
 
     // Assert
     expect(httpResponse.statusCode).toBe(500)
-    expect(httpResponse.body).toEqual(new ServerError())
+    expect(httpResponse.body).toEqual(new ServerError(new Error().stack as string))
   })
 
   test('Should return 200 if valid data is provided', async () => {

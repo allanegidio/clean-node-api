@@ -1,4 +1,6 @@
 import { InvalidParamError, MissingParamError, ServerError } from '../../errors'
+import { badRequest, ok, serverError } from '../../helpers/http-helper'
+import { HttpRequest } from '../../protocols'
 import { SignUpController } from './signup'
 import { EmailValidator, AddAccount, AddAccountModel, AccountModel } from './signup-protocols'
 
@@ -7,6 +9,22 @@ interface SignUpTypes {
   emailValidatorStub: EmailValidator
   addAcountStub: AddAccount
 }
+
+const fakeRequestFactory = (): HttpRequest => ({
+  body: {
+    name: 'valid_name',
+    email: 'valid_email@mail.com',
+    password: 'valid_password',
+    passwordConfirmation: 'valid_password'
+  }
+})
+
+const fakeAccountFactory = (): AccountModel => ({
+  id: 'valid_id',
+  name: 'valid_name',
+  email: 'valid_email@mail.com',
+  password: 'valid_password'
+})
 
 const emailValidatorStubFactory = (): EmailValidator => {
   /**
@@ -24,14 +42,7 @@ const emailValidatorStubFactory = (): EmailValidator => {
 const addAcountStubFactory = (): AddAccount => {
   class AddAcountStub implements AddAccount {
     async add (account: AddAccountModel): Promise<AccountModel> {
-      const fakeAccount = {
-        id: 'valid_id',
-        name: 'valid_name',
-        email: 'valid_email@mail.com',
-        password: 'valid_password'
-      }
-
-      return await new Promise(resolve => resolve(fakeAccount))
+      return await new Promise(resolve => resolve(fakeAccountFactory()))
     }
   }
 
@@ -54,97 +65,66 @@ describe('Singup Controller', () => {
   test('Should return 400 if no name is provided', async () => {
     // Arrange
     const { controller } = signupControllerFactory()
-    const httpRequest = {
-      body: {
-        email: 'any_email@mail.com',
-        password: 'any_password',
-        passwordConfirmation: 'any_password'
-      }
-    }
+    const httpRequest = fakeRequestFactory()
+    delete httpRequest.body.name
 
     // Action
     const httpResponse = await controller.handle(httpRequest)
 
     // Assert
-    expect(httpResponse.statusCode).toBe(400)
-    expect(httpResponse.body).toEqual(new MissingParamError('name'))
+    expect(httpResponse).toEqual(badRequest(new MissingParamError('name')))
   })
 
   test('Should return 400 if no email is provided', async () => {
     // Arrange
     const { controller } = signupControllerFactory()
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        password: 'any_password',
-        passwordConfirmation: 'any_password'
-      }
-    }
+    const httpRequest = fakeRequestFactory()
+    delete httpRequest.body.email
 
     // Action
     const httpResponse = await controller.handle(httpRequest)
 
     // Assert
-    expect(httpResponse.statusCode).toBe(400)
-    expect(httpResponse.body).toEqual(new MissingParamError('email'))
+    expect(httpResponse).toEqual(badRequest(new MissingParamError('email')))
   })
 
   test('Should return 400 if no password is provided', async () => {
     // Arrange
     const { controller } = signupControllerFactory()
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        email: 'any_email@mail.com',
-        passwordConfirmation: 'any_password'
-      }
-    }
+    const httpRequest = fakeRequestFactory()
+    delete httpRequest.body.password
 
     // Action
     const httpResponse = await controller.handle(httpRequest)
 
     // Assert
-    expect(httpResponse.statusCode).toBe(400)
-    expect(httpResponse.body).toEqual(new MissingParamError('password'))
+    expect(httpResponse).toEqual(badRequest(new MissingParamError('password')))
   })
 
   test('Should return 400 if no password confirmation is provided', async () => {
     // Arrange
     const { controller } = signupControllerFactory()
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        email: 'any_email@mail.com',
-        password: 'any_password'
-      }
-    }
+    const httpRequest = fakeRequestFactory()
+    delete httpRequest.body.passwordConfirmation
 
     // Action
     const httpResponse = await controller.handle(httpRequest)
 
     // Assert
-    expect(httpResponse.statusCode).toBe(400)
-    expect(httpResponse.body).toEqual(new MissingParamError('passwordConfirmation'))
+    expect(httpResponse).toEqual(badRequest(new MissingParamError('passwordConfirmation')))
   })
 
   test('Should return 400 if password confirmation fails', async () => {
     // Arrange
     const { controller } = signupControllerFactory()
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        email: 'any_email@mail.com',
-        password: 'any_password',
-        passwordConfirmation: 'password'
-      }
-    }
+    const httpRequest = fakeRequestFactory()
+    httpRequest.body.passwordConfirmation = 'password_different'
 
     // Action
     const httpResponse = await controller.handle(httpRequest)
 
     // Assert
-    expect(httpResponse.statusCode).toBe(400)
-    expect(httpResponse.body).toEqual(new InvalidParamError('passwordConfirmation'))
+    expect(httpResponse).toEqual(badRequest(new InvalidParamError('passwordConfirmation')))
   })
 
   test('Should return 400 if an invalid email is provided', async () => {
@@ -152,21 +132,14 @@ describe('Singup Controller', () => {
     const { controller, emailValidatorStub } = signupControllerFactory()
     jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
 
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        email: 'invalid_email@mail.com',
-        password: 'any_password',
-        passwordConfirmation: 'any_password'
-      }
-    }
+    const httpRequest = fakeRequestFactory()
+    httpRequest.body.email = 'invalid_email'
 
     // Action
     const httpResponse = await controller.handle(httpRequest)
 
     // Assert
-    expect(httpResponse.statusCode).toBe(400)
-    expect(httpResponse.body).toEqual(new InvalidParamError('email'))
+    expect(httpResponse).toEqual(badRequest(new InvalidParamError('email')))
   })
 
   test('Should call EmailValidator with correct email', async () => {
@@ -174,17 +147,8 @@ describe('Singup Controller', () => {
     const { controller, emailValidatorStub } = signupControllerFactory()
     const isValid = jest.spyOn(emailValidatorStub, 'isValid')
 
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        email: 'valid_email@mail.com',
-        password: 'any_password',
-        passwordConfirmation: 'any_password'
-      }
-    }
-
     // Action
-    await controller.handle(httpRequest)
+    await controller.handle(fakeRequestFactory())
 
     // Assert
     expect(isValid).toHaveBeenCalledWith('valid_email@mail.com')
@@ -195,21 +159,11 @@ describe('Singup Controller', () => {
     const { controller, emailValidatorStub } = signupControllerFactory()
     jest.spyOn(emailValidatorStub, 'isValid').mockImplementation(() => { throw new Error() })
 
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        email: 'invalid_email@mail.com',
-        password: 'any_password',
-        passwordConfirmation: 'any_password'
-      }
-    }
-
     // Action
-    const httpResponse = await controller.handle(httpRequest)
+    const httpResponse = await controller.handle(fakeRequestFactory())
 
     // Assert
-    expect(httpResponse.statusCode).toBe(500)
-    expect(httpResponse.body).toEqual(new ServerError(new Error().stack as string))
+    expect(httpResponse).toEqual(serverError(new ServerError(new Error().stack as string)))
   })
 
   test('Should call AddAcount with correct values', async () => {
@@ -217,23 +171,14 @@ describe('Singup Controller', () => {
     const { controller, addAcountStub } = signupControllerFactory()
     const addSpy = jest.spyOn(addAcountStub, 'add')
 
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        email: 'valid_email@mail.com',
-        password: 'any_password',
-        passwordConfirmation: 'any_password'
-      }
-    }
-
     // Action
-    await controller.handle(httpRequest)
+    await controller.handle(fakeRequestFactory())
 
     // Assert
     expect(addSpy).toHaveBeenCalledWith({
-      name: 'any_name',
+      name: 'valid_name',
       email: 'valid_email@mail.com',
-      password: 'any_password'
+      password: 'valid_password'
     })
   })
 
@@ -244,46 +189,22 @@ describe('Singup Controller', () => {
       return await new Promise((resolve, reject) => { reject(new Error()) })
     })
 
-    const httpRequest = {
-      body: {
-        name: 'any_name',
-        email: 'invalid_email@mail.com',
-        password: 'any_password',
-        passwordConfirmation: 'any_password'
-      }
-    }
-
     // Action
-    const httpResponse = await controller.handle(httpRequest)
+    const httpResponse = await controller.handle(fakeRequestFactory())
 
     // Assert
     expect(httpResponse.statusCode).toBe(500)
-    expect(httpResponse.body).toEqual(new ServerError(new Error().stack as string))
+    expect(httpResponse).toEqual(serverError(new ServerError(new Error().stack as string)))
   })
 
   test('Should return 200 if valid data is provided', async () => {
     // Arrange
     const { controller } = signupControllerFactory()
 
-    const httpRequest = {
-      body: {
-        name: 'valid_name',
-        email: 'valid_email@mail.com',
-        password: 'valid_password',
-        passwordConfirmation: 'valid_password'
-      }
-    }
-
     // Action
-    const httpResponse = await controller.handle(httpRequest)
+    const httpResponse = await controller.handle(fakeRequestFactory())
 
     // Assert
-    expect(httpResponse.statusCode).toBe(200)
-    expect(httpResponse.body).toEqual({
-      id: 'valid_id',
-      name: 'valid_name',
-      email: 'valid_email@mail.com',
-      password: 'valid_password'
-    })
+    expect(httpResponse).toEqual(ok(fakeAccountFactory()))
   })
 })
